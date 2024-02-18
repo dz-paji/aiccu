@@ -41,8 +41,8 @@ CFLAGS	+= -D AICCU_CONSOLE
 # Used by TIC to secure that communication
 # Currently defaultly builds only on Linux, but other platforms might easily also support it
 ifeq ($(shell uname | grep -c "Linux"),1)
-CFLAGS	+= -D AICCU_GNUTLS
-LDFLAGS += -lgnutls
+# CFLAGS	+= -D AICCU_GNUTLS
+# LDFLAGS += -lgnutls
 endif
 
 # Linux
@@ -50,7 +50,7 @@ ifeq ($(shell uname | grep -c "Linux"),1)
 CFLAGS  += -D_LINUX -D HAS_IFHEAD -D AICCU_TYPE="\"linux\""
 SRCS	+= ../common/aiccu_linux.c
 OBJS	+= ../common/aiccu_linux.o
-LDFLAGS	+= -lpthread -lresolv
+LDFLAGS	+= -lpthread -lresolv -pthread
 endif
 
 # FreeBSD
@@ -145,6 +145,7 @@ all: aiccu
 
 aiccu:	$(OBJS) ${SRCS} ${INCS}
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)
+	
 ifeq ($(shell echo $(CFLAGS) | grep -c "DEBUG"),0)
 ifeq ($(shell echo "$(RPM_OPT_FLAGS)" | wc -c),1)
 	strip $@
