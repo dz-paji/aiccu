@@ -300,7 +300,7 @@ TLSSOCKET sock_alloc(void)
 	gnutls_set_default_priority(sock->session);
 	/* XXX: Return value is not documented in GNUTLS documentation! */
 
-	gnutls_certificate_type_set_priority(sock->session, cert_type_priority);
+	// gnutls_certificate_type_set_priority(sock->session, cert_type_priority);
 	/* XXX: Return value is not documented in GNUTLS documentation! */
 
 	/* Configure the x509 credentials for the current session */

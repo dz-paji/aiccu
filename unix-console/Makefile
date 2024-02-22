@@ -11,7 +11,7 @@
 # **********************************************************/
 
 SRCS	= main.c ../common/tun.c ../common/aiccu.c ../common/hash_md5.c ../common/hash_evp.c ../common/hash_sha1.c ../common/common.c ../common/heartbeat.c ../common/tic.c ../common/ayiya.c ../common/aiccu_test.c ../common/resolver.c
-INCS	= ../common/tun.h ../common/aiccu.h ../common/hash_md5.h ../common/hash_sha1.h ../common/common.h ../common/heartbeat.h ../common/tic.h ../common/ayiya.h ../common/resolver.h
+INCS	= ../common/tun.h ../common/aiccu.h ../common/hash_md5.h ../common/hash_sha1.h ../common/hash_evp.h ../common/common.h ../common/heartbeat.h ../common/tic.h ../common/ayiya.h ../common/resolver.h
 OBJS	= main.o ../common/tun.o ../common/aiccu.o ../common/hash_md5.o ../common/hash_sha1.o ../common/hash_evp.o ../common/common.o ../common/heartbeat.o ../common/tic.o ../common/ayiya.o ../common/aiccu_test.o ../common/resolver.o
 
 # New features not fully implemented and thus disabled for now
@@ -37,12 +37,15 @@ endif
 # This is a console client
 CFLAGS	+= -D AICCU_CONSOLE
 
+# Link openssl
+LDLIBS	+= -lcrypto -lssl
+
 # GnuTLS Support ?
 # Used by TIC to secure that communication
 # Currently defaultly builds only on Linux, but other platforms might easily also support it
 ifeq ($(shell uname | grep -c "Linux"),1)
-# CFLAGS	+= -D AICCU_GNUTLS
-# LDFLAGS += -lgnutls
+CFLAGS	+= -D AICCU_GNUTLS
+LDLIBS += -lgnutls
 endif
 
 # Linux
@@ -51,6 +54,7 @@ CFLAGS  += -D_LINUX -D HAS_IFHEAD -D AICCU_TYPE="\"linux\""
 SRCS	+= ../common/aiccu_linux.c
 OBJS	+= ../common/aiccu_linux.o
 LDFLAGS	+= -lpthread -lresolv -pthread
+LDFLAGS += -lresolv -lpthread
 endif
 
 # FreeBSD
@@ -143,8 +147,9 @@ endif
 
 all: aiccu
 
-aiccu:	$(OBJS) ${SRCS} ${INCS}
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)
+aiccu:  $(OBJS) ${SRCS} ${INCS}
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+	
 	
 ifeq ($(shell echo $(CFLAGS) | grep -c "DEBUG"),0)
 ifeq ($(shell echo "$(RPM_OPT_FLAGS)" | wc -c),1)

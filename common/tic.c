@@ -237,9 +237,9 @@ bool tic_Login(struct TIC_conf *tic, const char *username, const char *password,
 
 	/* Send the response */
 	/* sSignature = sha256(challenge.sha256(password)); */
-	SHA256(password, sSignature, sizeof(sSignature));
+	SHA256(password, sSignature, strlen(password));
 	snprintf(sChallenge, sizeof(sChallenge), "%s%s", &buf[4], sSignature);
-	SHA256(sChallenge, sSignature, sizeof(sSignature));
+	SHA256(sChallenge, sSignature, strlen(sChallenge));
 
 	sock_printf(tic->sock, "authenticate sha256 %s\n", sSignature);
 
