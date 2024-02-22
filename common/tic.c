@@ -13,6 +13,7 @@
 #include "common.h"
 #include "aiccu.h"
 #include "tic.h"
+#include "hash_evp.h"
 
 /* Specific includes only used here */
 #ifndef _WIN32
@@ -221,7 +222,7 @@ bool tic_Login(struct TIC_conf *tic, const char *username, const char *password,
 	}
 	
 	/* Pick a challenge */
-	sock_printf(tic->sock, "challenge md5\n");
+	sock_printf(tic->sock, "challenge sha256\n");
 
 	/* Fetch the answer */
 	if (sock_getline(tic->sock, tic_buf, sizeof(tic_buf), &tic_filled, buf, sizeof(buf)) == -1)
@@ -235,12 +236,12 @@ bool tic_Login(struct TIC_conf *tic, const char *username, const char *password,
 	}
 
 	/* Send the response */
-	/* sSignature = md5(challenge.md5(password)); */
-	MD5String(password, sSignature, sizeof(sSignature));
+	/* sSignature = sha256(challenge.sha256(password)); */
+	SHA256(password, sSignature, sizeof(sSignature));
 	snprintf(sChallenge, sizeof(sChallenge), "%s%s", &buf[4], sSignature);
-	MD5String(sChallenge, sSignature, sizeof(sSignature));
+	SHA256(sChallenge, sSignature, sizeof(sSignature));
 
-	sock_printf(tic->sock, "authenticate md5 %s\n", sSignature);
+	sock_printf(tic->sock, "authenticate sha256 %s\n", sSignature);
 
 	/* Fetch the answer */
 	if (sock_getline(tic->sock, tic_buf, sizeof(tic_buf), &tic_filled, buf, sizeof(buf)) == -1)
