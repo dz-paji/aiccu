@@ -12,6 +12,7 @@
 
 #include "heartbeat.h"
 #include "aiccu.h"
+#include "hash_evp.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -204,10 +205,12 @@ SOCKET heartbeat_socket(
 /* Send a heartbeat */
 int heartbeat_send(SOCKET sockfd, char *sIPv4Local, char *sIPv6Local, char *sPassword, bool bBehindNAT)
 {
-	struct MD5Context	md5;
-	unsigned char		*p, our_digest[20], *pn = our_digest, buf[1000];
+	// struct MD5Context	md5;
+	unsigned char		*p, our_digest[64], *pn = our_digest, buf[1000];
 	time_t			time_tee;
 	int			i;
+	unsigned int		sha256_len;
+	EVP_MD_CTX		*md5;
 
 	time_tee = time(NULL);
 
@@ -217,10 +220,15 @@ int heartbeat_send(SOCKET sockfd, char *sIPv4Local, char *sIPv6Local, char *sPas
 		(bBehindNAT ? "sender" : sIPv4Local),
 		(long int)time_tee, sPassword);
 
-	/* Generate a MD5 */
-	MD5Init(&md5);
-	MD5Update(&md5, buf, (unsigned int)strlen((char *)buf));
-	MD5Final(our_digest, &md5);
+	// /* Generate a MD5 */
+	// MD5Init(&md5);
+	// MD5Update(&md5, buf, (unsigned int)strlen((char *)buf));
+	// MD5Final(our_digest, &md5);
+
+	/* Generate SHA256*/
+	SHA256Init(&md5);
+	SHA256Update(&md5, buf, (unsigned int)strlen((char *)buf));
+	SHA256Final(&md5, our_digest);
 
 	/* Overwrite it without password */
 	p = buf;
@@ -230,7 +238,7 @@ int heartbeat_send(SOCKET sockfd, char *sIPv4Local, char *sIPv6Local, char *sPas
 		(long int)time_tee);
 
 	/* append the digest */
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < sha256_len; i++)
 	{
 		snprintf((char *)p, 3, (const char *)"%02x", *pn++);
 		p+=2;
