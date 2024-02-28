@@ -18,6 +18,7 @@
 /* Specific includes only used here */
 #ifndef _WIN32
 #include <sys/utsname.h>
+#include<unistd.h>
 #endif
 
 /* getline vars */
@@ -181,8 +182,8 @@ bool tic_Login(struct TIC_conf *tic, const char *username, const char *password,
 		return false;
 	}
 
-#ifdef AICCU_GNUTLS
   /* Upgrade to TLS */
+  	dolog(LOG_ALERT, "I am going TLS. Hurray!");
 	sock_printf(tic->sock, "starttls\n");
 
 	/* Fetch the welcome */
@@ -205,8 +206,8 @@ bool tic_Login(struct TIC_conf *tic, const char *username, const char *password,
 		if (g_aiccu->verbose) dolog(LOG_WARNING, "TIC Server does not support TLS but TLS is not required, continuing\n");
 	}
 
-#endif
-
+	dolog(LOG_ALERT, "I am not going TLS.");
+	sleep(1);
 	/* Send our username */
 	sock_printf(tic->sock, "username %s\n", username);
 

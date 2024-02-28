@@ -28,8 +28,8 @@
 #endif
 
 /* AICCU Version */
-#define AICCU_VER		"2007.01.15"
-#define AICCU_VERSION_NUM	2007,01,15,0
+#define AICCU_VER		"2024.02.28"
+#define AICCU_VERSION_NUM	2024,02,28,0
 /* _NUM = required for Windows Resources */
 
 #ifdef _WIN32
@@ -110,9 +110,7 @@ struct AICCU_conf
 	struct TSP_conf	*tsp;			/* TSP Structure */
 #endif
 
-#ifdef AICCU_GNUTLS
 	gnutls_certificate_credentials	tls_cred;	/* GNUTLS credentials */
-#endif
 
 	bool		daemonize;		/* Daemonize? */
 	bool		verbose;		/* Verbosity */

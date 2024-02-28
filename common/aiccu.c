@@ -44,20 +44,18 @@ struct pl_rule aiccu_conf_rules[] =
 	{NULL,			PLRT_END,	0},
 };
 
-#ifdef AICCU_GNUTLS
 void aiccu_tls_log(int level, const char *message);
 void aiccu_tls_log(int level, const char *message)
 {
 	dolog(level, "[GNUTLS] %s\n", message);
 }
-#endif
 
 bool aiccu_InitConfig()
 {
-#ifdef AICCU_GNUTLS
+
 	int ret;
 #define CAFILE "ca.pem"
-#endif
+
 	/* Allocate & Initialize */
 	g_aiccu = (struct AICCU_conf *)malloc(sizeof(*g_aiccu));
 	if (!g_aiccu) return false;
@@ -83,7 +81,6 @@ bool aiccu_InitConfig()
 	g_aiccu->pidfile	= strdup(AICCU_PID);
 	if (!g_aiccu->pidfile) return false;
 
-#ifdef AICCU_GNUTLS
 	/* Initialize GNUTLS */
 	ret = gnutls_global_init();
 	if (ret != 0)
@@ -120,7 +117,6 @@ bool aiccu_InitConfig()
 	gnutls_global_set_log_level(5);
 #endif
 
-#endif /* AICCU_GNUTLS */
 
 	return true;
 }
@@ -249,10 +245,9 @@ void aiccu_FreeConfig()
 {
 	if (!g_aiccu) return;
 
-#ifdef AICCU_GNUTLS
+
 	gnutls_certificate_free_credentials(g_aiccu->tls_cred);
 	gnutls_global_deinit();
-#endif
 
 	if (g_aiccu->username)		{ free(g_aiccu->username);	g_aiccu->username	= NULL; }
 	if (g_aiccu->password)		{ free(g_aiccu->password);	g_aiccu->password	= NULL; }

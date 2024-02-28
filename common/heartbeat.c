@@ -210,7 +210,7 @@ int heartbeat_send(SOCKET sockfd, char *sIPv4Local, char *sIPv6Local, char *sPas
 	time_t			time_tee;
 	int			i;
 	unsigned int		sha256_len;
-	EVP_MD_CTX		*md5;
+	EVP_MD_CTX		*md;
 
 	time_tee = time(NULL);
 
@@ -226,9 +226,9 @@ int heartbeat_send(SOCKET sockfd, char *sIPv4Local, char *sIPv6Local, char *sPas
 	// MD5Final(our_digest, &md5);
 
 	/* Generate SHA256*/
-	SHA256Init(&md5);
-	SHA256Update(&md5, buf, (unsigned int)strlen((char *)buf));
-	SHA256Final(&md5, our_digest);
+	SHA256Init(&md);
+	SHA256Update(&md, buf, (unsigned int)strlen((char *)buf));
+	SHA256Final(&md, our_digest);
 
 	/* Overwrite it without password */
 	p = buf;

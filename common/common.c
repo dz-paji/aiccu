@@ -134,10 +134,8 @@ void sock_printf(TLSSOCKET sock, const char *fmt, ...)
 
 		while (done < len)
 		{
-#ifdef AICCU_GNUTLS
 			if (sock->tls_active) ret = gnutls_record_send(sock->session, &buf[done], len-done);
 			else
-#endif
 			ret = send(sock->socket, &buf[done], len-done, 0);
 			
 			if (ret > 0) done+=ret;
@@ -238,10 +236,10 @@ int sock_getline(TLSSOCKET sock, char *rbuf, unsigned int rbuflen, unsigned int 
 		E(dolog(LOG_DEBUG, "gl() - Trying to receive (max=%d)...\n", rbuflen-*filled-10);)
 
 		/* Fill the rest of the buffer */
-#ifdef AICCU_GNUTLS
+
 		if (sock->tls_active) i = gnutls_record_recv(sock->session, &rbuf[*filled], rbuflen-*filled-10);
 		else
-#endif
+
 		i = recv(sock->socket, &rbuf[*filled], rbuflen-*filled-10, 0);
 
 		E(dolog(LOG_DEBUG, "gl() - Received %d\n", i);)
@@ -257,6 +255,7 @@ int sock_getline(TLSSOCKET sock, char *rbuf, unsigned int rbuflen, unsigned int 
 			*filled >= (ubuflen-10) )
 		{
 			dolog(LOG_ERR, "Buffer almost flowed over without receiving a newline\n");
+			if (g_aiccu->verbose) dolog(LOG_DEBUG, "sock_getline() : \"%s\"\n", rbuf);
 			return -1;
 		}
 
@@ -270,11 +269,10 @@ int sock_getline(TLSSOCKET sock, char *rbuf, unsigned int rbuflen, unsigned int 
 TLSSOCKET sock_alloc(void);
 TLSSOCKET sock_alloc(void)
 {
-#ifdef AICCU_GNUTLS
 	/* Allow connections to servers that have OpenPGP keys as well */
 	const int	cert_type_priority[3] = { GNUTLS_CRT_X509, GNUTLS_CRT_OPENPGP, 0 };
 	int		ret;
-#endif /* AICCU_GNUTLS*/
+
 
 	TLSSOCKET	sock;	
 
@@ -283,7 +281,6 @@ TLSSOCKET sock_alloc(void)
 	
 	sock->socket = -1;
 
-#ifdef AICCU_GNUTLS
 	/* TLS is not active yet (use sock_gotls() for that) */
 	sock->tls_active = false;
 
@@ -296,8 +293,9 @@ TLSSOCKET sock_alloc(void)
 		return NULL;
 	}
 
-	/* Use default priorities */
+	/* Priorities TLS1.3 */
 	gnutls_set_default_priority(sock->session);
+	// gnutls_priority_set_direct(sock->session, "NORMAL:-VERS-TLS1.0:-VERS-TLS1.1:-VERS-TLS1.2:+VERS-TLS1.3", NULL);
 	/* XXX: Return value is not documented in GNUTLS documentation! */
 
 	// gnutls_certificate_type_set_priority(sock->session, cert_type_priority);
@@ -307,8 +305,6 @@ TLSSOCKET sock_alloc(void)
 	gnutls_credentials_set(sock->session, GNUTLS_CRD_CERTIFICATE, g_aiccu->tls_cred);
 	/* XXX: Return value is not documented in GNUTLS documentation! */
 
-#endif /* AICCU_GNUTLS*/
-
 	return sock;
 }
 
@@ -316,13 +312,11 @@ void sock_free(TLSSOCKET sock)
 {
 	if (!sock) return;
 	
-#ifdef AICCU_GNUTLS
 	if (sock->tls_active)
 	{
 		sock->tls_active = false;
 		gnutls_bye(sock->session, GNUTLS_SHUT_RDWR);
 	}
-#endif /* AICCU_GNUTLS*/
 
 	if (sock->socket >= 0)
 	{
@@ -332,9 +326,8 @@ void sock_free(TLSSOCKET sock)
 		sock->socket = -1;
 	}
 
-#ifdef AICCU_GNUTLS
+
 	gnutls_deinit(sock->session);
-#endif /* AICCU_GNUTLS*/
 
 	free(sock);
 }
@@ -460,7 +453,6 @@ TLSSOCKET listen_server(const char *description, const char *hostname, const cha
 /*
  * Put a socket into TLS mode
  */
-#ifdef AICCU_GNUTLS
 bool sock_gotls(TLSSOCKET sock)
 {
 	int ret = 0;
@@ -489,7 +481,6 @@ bool sock_gotls(TLSSOCKET sock)
 	sock->tls_active = true;
 	return true;
 }
-#endif
 
 /* Count the number of fields in <s> */
 unsigned int countfields(char *s)

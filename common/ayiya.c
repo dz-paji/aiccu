@@ -344,7 +344,7 @@ void ayiya_beat(void)
 
 bool ayiya(struct TIC_Tunnel *hTunnel)
 {
-        SHA_CTX			sha1;
+    SHA_CTX			sha1;
 	struct addrinfo hints, *res, *ressave;
 #ifndef _WIN32
 	pthread_t		thread;

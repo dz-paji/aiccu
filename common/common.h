@@ -314,16 +314,15 @@
 #include "hash_md5.h"
 #include "hash_sha1.h"
 
+/* GnuTLS*/
+#include <gnutls/gnutls.h>
+
 /* Resolver includes */
 #ifndef _WIN32
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
 #include <netdb.h>
-#endif
-
-#ifdef AICCU_GNUTLS
-#include <gnutls/gnutls.h>
 #endif
 
 #ifndef NS_GET16SZ
@@ -379,10 +378,10 @@ struct pl_rule
 struct tlssocket
 {
 	SOCKET			socket;
-#ifdef AICCU_GNUTLS
+
 	bool			tls_active;	/* TLS active? */
 	gnutls_session		session;	/* The GnuTLS sesision */
-#endif
+
 };
 
 typedef struct tlssocket * TLSSOCKET;
@@ -401,9 +400,9 @@ int sock_getline(TLSSOCKET sock, char *rbuf, unsigned int rbuflen, unsigned int 
 TLSSOCKET connect_client(const char *hostname, const char *service, int family, int socktype);
 TLSSOCKET listen_server(const char *description, const char *hostname, const char *service, int family, int socktype);
 void sock_free(TLSSOCKET sock);
-#ifdef AICCU_GNUTLS
+
 bool sock_gotls(TLSSOCKET sock);
-#endif
+
 
 /* Parsing functions */
 unsigned int countfields(char *s);
