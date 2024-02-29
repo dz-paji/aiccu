@@ -23,10 +23,9 @@ extern CAICCUApp theApp;
 #include "common.h"
 
 /* getline debugging? */
-/*
-#define E(x) x
- */
+// #define E(x) x
 #define E(x) {}
+
 
 void dologA(int level, const char *fmt, va_list ap)
 {

@@ -85,8 +85,8 @@ void ayiya_reader(char *buf, unsigned int length)
 	int			lenout;
 	// SHA_CTX			sha1;
 	// sha1_byte		hash[SHA1_DIGEST_LENGTH];
-	EVP_MD_CTX	*md;
-	uint8_t			hash[SHA256_DIGEST_LENGTH];
+	EVP_MD_CTX		*md = EVP_MD_CTX_create();
+	unsigned char			hash[SHA256_DIGEST_LENGTH];
 	
 	struct sockaddr_in	target;
 
@@ -128,9 +128,9 @@ void ayiya_reader(char *buf, unsigned int length)
 	// SHA1_Final(hash, &sha1);
 
 	/* Generate sha256 hash */
-	SHA256Init(&md);
-	SHA256Update(&md, (sha256_byte *)&s2, sizeof(s2)-sizeof(s2.payload)+length);
-	SHA256Final(&md, hash);
+	SHA256Init(md);
+	SHA256Update(md, (unsigned char *)&s2, sizeof(s2)-sizeof(s2.payload)+length);
+	SHA256Final(md, hash);
 
 	/* Store the hash in the actual packet */
 	memcpy(&s2.hash, &hash, sizeof(s2.hash));
@@ -169,8 +169,8 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 	socklen_t		cl;
 	int			i, n;
 	unsigned int		payloadlen = 0;
-	EVP_MD_CTX		*md;
-	sha256_byte		their_hash[SHA256_DIGEST_LENGTH],
+	EVP_MD_CTX		*md = EVP_MD_CTX_create();
+	unsigned char		their_hash[SHA256_DIGEST_LENGTH],
 				our_hash[SHA256_DIGEST_LENGTH];
 
 	ayiya_log(LOG_INFO, writer_name, NULL, 0, "(Socket to TUN) started\n");
@@ -250,9 +250,9 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 		// SHA1_Final(our_hash, &sha1);
 
 		/* Generate sha256 of the header + identity + shared secret */
-		SHA256Init(&md);
-		SHA256Update(&md, (sha256_byte *)s, n);
-		SHA256Final(&md, our_hash);
+		SHA256Init(md);
+		SHA256Update(md, (unsigned char *)s, n);
+		SHA256Final(md, our_hash);
 
 		memcpy(&s->hash, &our_hash, sizeof(s->hash));
 
@@ -291,8 +291,8 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 void ayiya_beat(void)
 {
 	// SHA_CTX			sha1;
-	EVP_MD_CTX		*md;
-	sha256_byte		hash[SHA256_DIGEST_LENGTH];
+	EVP_MD_CTX		*md = EVP_MD_CTX_create();
+	unsigned char		hash[SHA256_DIGEST_LENGTH];
 	struct sockaddr_in	target;
 	struct pseudo_ayh	s;
 	int			lenout, n;
@@ -337,9 +337,9 @@ void ayiya_beat(void)
 	// SHA1_Final(hash, &sha1);
 
 	/* Generate sha256 hash */
-	SHA256Init(&md);
-	SHA256Update(&md, (sha256_byte *)&s, sizeof(s)-sizeof(s.payload));
-	SHA256Final(&md, hash);
+	SHA256Init(md);
+	SHA256Update(md, (unsigned char *)&s, sizeof(s)-sizeof(s.payload));
+	SHA256Final(md, hash);
 
 	/* Store the hash in the actual packet */
 	memcpy(&s.hash, &hash, sizeof(s.hash));
@@ -364,7 +364,8 @@ void ayiya_beat(void)
 bool ayiya(struct TIC_Tunnel *hTunnel)
 {
     // SHA_CTX			sha1;
-	EVP_MD_CTX		*md;
+
+	EVP_MD_CTX		*md = EVP_MD_CTX_create();
 	struct addrinfo hints, *res, *ressave;
 #ifndef _WIN32
 	pthread_t		thread;
@@ -466,9 +467,13 @@ bool ayiya(struct TIC_Tunnel *hTunnel)
 	// SHA1_Final(ayiya_hash, &sha1);
 
 	/* Generate sha256 of the shared secret */
-	SHA256Init(&md);
-	SHA256Update(&md, (const sha256_byte *)hTunnel->sPassword, (unsigned int)strlen(hTunnel->sPassword));
-	SHA256Final(&md, ayiya_hash);
+	D(dolog(LOG_DEBUG, "Generating SHA256 of the shared secret\n");)
+	SHA256Init(md);
+	D(dolog(LOG_DEBUG, "ayiya.c line 471\n");)
+	SHA256Update(md, (const sha256_byte *)hTunnel->sPassword, (unsigned int)strlen(hTunnel->sPassword));
+	D(dolog(LOG_DEBUG, "ayiya.c line 473\n");)
+	SHA256Final(md, ayiya_hash);
+	D(dolog(LOG_DEBUG, "SHA256 of the shared secret generated\n");)
 
 	/* Setup listening socket */
 	ayiya_socket = connect_client(hTunnel->sIPv4_POP , AYIYA_PORT, AF_INET, SOCK_DGRAM);

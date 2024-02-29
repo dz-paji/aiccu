@@ -10,6 +10,9 @@
 #  $Date: 2007-01-15 11:04:27 $
 # **********************************************************/
 
+# Build with debug
+CFLAGS	+= $(CWARNS) -D_DEBUG -g3
+
 SRCS	= main.c ../common/tun.c ../common/aiccu.c ../common/hash_md5.c ../common/hash_evp.c ../common/hash_sha1.c ../common/common.c ../common/heartbeat.c ../common/tic.c ../common/ayiya.c ../common/aiccu_test.c ../common/resolver.c
 INCS	= ../common/tun.h ../common/aiccu.h ../common/hash_md5.h ../common/hash_sha1.h ../common/hash_evp.h ../common/common.h ../common/heartbeat.h ../common/tic.h ../common/ayiya.h ../common/resolver.h
 OBJS	= main.o ../common/tun.o ../common/aiccu.o ../common/hash_md5.o ../common/hash_sha1.o ../common/hash_evp.o ../common/common.o ../common/heartbeat.o ../common/tic.o ../common/ayiya.o ../common/aiccu_test.o ../common/resolver.o

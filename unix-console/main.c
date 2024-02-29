@@ -385,6 +385,7 @@ int main(int argc, char *argv[])
 		SetConsoleCtrlHandler((PHANDLER_ROUTINE)sigterm_testing, true);
 #endif
 		/* Setup the tunnel */
+		D(dolog(LOG_INFO, "Setting up the tunnel main.c line 388\n"));
 		if (aiccu_setup(hTunnel, true))
 		{
 			aiccu_test(hTunnel, strcasecmp(argv[1], "autotest") == 0 ? true : false);
@@ -469,8 +470,10 @@ int main(int argc, char *argv[])
 	 * Setup our tunnel
 	 * This also spawns required threads for AYIYA
 	 */
+	D(dolog(LOG_INFO, "Setting up the tunnel main.c line 473\n"));
 	if (aiccu_setup(hTunnel, true))
 	{
+		D(dolog(LOG_INFO, "main.c line 476\n"));
 		/* We need to stay running when doing Heartbeat or AYIYA */
 		if (	strcasecmp(hTunnel->sType, "6in4-heartbeat") == 0 ||
 			strcasecmp(hTunnel->sType, "ayiya") == 0)
@@ -495,6 +498,7 @@ int main(int argc, char *argv[])
 		if (g_aiccu) unlink(g_aiccu->pidfile);
 #endif
 	}
+	D(dolog(LOG_INFO, "main.c line 500\n"));
 
 	/* Free our resources */
 	aiccu_FreeConfig();
