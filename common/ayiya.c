@@ -19,14 +19,14 @@ struct pseudo_ayh
 {
 	struct ayiyahdr	ayh;
 	struct in6_addr	identity;
-	sha1_byte	hash[SHA1_DIGEST_LENGTH];
+	uint8_t	hash[SHA256_DIGEST_LENGTH];
 	char		payload[2048];
 };
 
 struct in_addr		ayiya_ipv4_pop;			/* IPv4 remote endpoint */
 struct in6_addr		ayiya_ipv6_local,		/* IPv6 local  endpoint */
 			ayiya_ipv6_pop;			/* IPv6 remote endpoint */
-sha1_byte		ayiya_hash[SHA1_DIGEST_LENGTH];	/* SHA1 Hash of the shared secret. */
+uint8_t		ayiya_hash[SHA256_DIGEST_LENGTH];	/* SHA256 Hash of the shared secret. */
 
 TLSSOCKET ayiya_socket = NULL;
 
@@ -83,8 +83,11 @@ void ayiya_reader(char *buf, unsigned int length)
 {
 	struct pseudo_ayh	*s = (struct pseudo_ayh *)buf, s2;
 	int			lenout;
-	SHA_CTX			sha1;
-	sha1_byte		hash[SHA1_DIGEST_LENGTH];
+	// SHA_CTX			sha1;
+	// sha1_byte		hash[SHA1_DIGEST_LENGTH];
+	EVP_MD_CTX	*md;
+	uint8_t			hash[SHA256_DIGEST_LENGTH];
+	
 	struct sockaddr_in	target;
 
 	/* We tunnel over IPv4 */
@@ -96,8 +99,8 @@ void ayiya_reader(char *buf, unsigned int length)
 	memset(&s, 0, sizeof(s));
 	s2.ayh.ayh_idlen	= 4;			/* 2^4 = 16 bytes = 128 bits (IPv6 address) */
 	s2.ayh.ayh_idtype	= ayiya_id_integer;
-	s2.ayh.ayh_siglen	= 5;			/* 5*4 = 20 bytes = 160 bits (SHA1) */
-	s2.ayh.ayh_hshmeth	= ayiya_hash_sha1;
+	s2.ayh.ayh_siglen	= 8;			/* 8*4 = 32 bytes = 256 bits = SHA256 Digest lengths */
+	s2.ayh.ayh_hshmeth	= ayiya_hash_sha256;
 	s2.ayh.ayh_autmeth	= ayiya_auth_sharedsecret;
 	s2.ayh.ayh_opcode	= ayiya_op_forward;
 	s2.ayh.ayh_nextheader	= IPPROTO_IPV6;
@@ -117,12 +120,17 @@ void ayiya_reader(char *buf, unsigned int length)
 	 */
 	memcpy(&s2.hash, ayiya_hash, sizeof(s2.hash));
 
-	/* Generate a SHA1 */
-	SHA1_Init(&sha1);
-	/* Hash the complete AYIYA packet */
-	SHA1_Update(&sha1, (sha1_byte *)&s2, sizeof(s2)-sizeof(s2.payload)+length);
-	/* Store the hash in the packets hash */
-	SHA1_Final(hash, &sha1);
+	// /* Generate a SHA1 */
+	// SHA1_Init(&sha1);
+	// /* Hash the complete AYIYA packet */
+	// SHA1_Update(&sha1, (sha1_byte *)&s2, sizeof(s2)-sizeof(s2.payload)+length);
+	// /* Store the hash in the packets hash */
+	// SHA1_Final(hash, &sha1);
+
+	/* Generate sha256 hash */
+	SHA256Init(&md);
+	SHA256Update(&md, (sha256_byte *)&s2, sizeof(s2)-sizeof(s2.payload)+length);
+	SHA256Final(&md, hash);
 
 	/* Store the hash in the actual packet */
 	memcpy(&s2.hash, &hash, sizeof(s2.hash));
@@ -161,9 +169,9 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 	socklen_t		cl;
 	int			i, n;
 	unsigned int		payloadlen = 0;
-	SHA_CTX			sha1;
-	sha1_byte		their_hash[SHA1_DIGEST_LENGTH],
-				our_hash[SHA1_DIGEST_LENGTH];
+	EVP_MD_CTX		*md;
+	sha256_byte		their_hash[SHA256_DIGEST_LENGTH],
+				our_hash[SHA256_DIGEST_LENGTH];
 
 	ayiya_log(LOG_INFO, writer_name, NULL, 0, "(Socket to TUN) started\n");
 
@@ -186,8 +194,8 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 
 		if (	s->ayh.ayh_idlen != 4 ||
 			s->ayh.ayh_idtype != ayiya_id_integer ||
-			s->ayh.ayh_siglen != 5 ||
-			s->ayh.ayh_hshmeth != ayiya_hash_sha1 ||
+			s->ayh.ayh_siglen != 8 ||
+			s->ayh.ayh_hshmeth != ayiya_hash_sha256 ||
 			s->ayh.ayh_autmeth != ayiya_auth_sharedsecret ||
 			(s->ayh.ayh_nextheader != IPPROTO_IPV6 &&
 			 s->ayh.ayh_nextheader != IPPROTO_NONE) ||
@@ -199,8 +207,8 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 			ayiya_log(LOG_ERR, writer_name, &ci, cl, "Dropping invalid AYIYA packet\n");
 			ayiya_log(LOG_ERR, writer_name, &ci, cl, "idlen:   %u != %u\n", s->ayh.ayh_idlen, 4);
 			ayiya_log(LOG_ERR, writer_name, &ci, cl, "idtype:  %u != %u\n", s->ayh.ayh_idtype, ayiya_id_integer);
-			ayiya_log(LOG_ERR, writer_name, &ci, cl, "siglen:  %u != %u\n", s->ayh.ayh_siglen, 5);
-			ayiya_log(LOG_ERR, writer_name, &ci, cl, "hshmeth: %u != %u\n", s->ayh.ayh_hshmeth, ayiya_hash_sha1);
+			ayiya_log(LOG_ERR, writer_name, &ci, cl, "siglen:  %u != %u\n", s->ayh.ayh_siglen, 8);
+			ayiya_log(LOG_ERR, writer_name, &ci, cl, "hshmeth: %u != %u\n", s->ayh.ayh_hshmeth, ayiya_hash_sha256);
 			ayiya_log(LOG_ERR, writer_name, &ci, cl, "autmeth: %u != %u\n", s->ayh.ayh_autmeth, ayiya_auth_sharedsecret);
 			ayiya_log(LOG_ERR, writer_name, &ci, cl, "nexth  : %u != %u || %u\n", s->ayh.ayh_nextheader, IPPROTO_IPV6, IPPROTO_NONE);
 			ayiya_log(LOG_ERR, writer_name, &ci, cl, "opcode : %u != %u || %u || %u\n", s->ayh.ayh_opcode, ayiya_op_forward, ayiya_op_echo_request, ayiya_op_echo_request_forward);
@@ -234,16 +242,21 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 		/* Copy in our SHA1 hash */
 		memcpy(&s->hash, &ayiya_hash, sizeof(s->hash));
 
-		/* Generate a SHA1 of the header + identity + shared secret */
-		SHA1_Init(&sha1);
-		/* Hash the Packet */
-		SHA1_Update(&sha1, (sha1_byte *)s, n);
-		/* Store the hash */
-		SHA1_Final(our_hash, &sha1);
+		// /* Generate a SHA1 of the header + identity + shared secret */
+		// SHA1_Init(&sha1);
+		// /* Hash the Packet */
+		// SHA1_Update(&sha1, (sha1_byte *)s, n);
+		// /* Store the hash */
+		// SHA1_Final(our_hash, &sha1);
+
+		/* Generate sha256 of the header + identity + shared secret */
+		SHA256Init(&md);
+		SHA256Update(&md, (sha256_byte *)s, n);
+		SHA256Final(&md, our_hash);
 
 		memcpy(&s->hash, &our_hash, sizeof(s->hash));
 
-		/* Compare the SHA1's */
+		/* Compare the SHA256's */
 		if (memcmp(&their_hash, &our_hash, sizeof(their_hash)) != 0)
 		{
 			ayiya_log(LOG_WARNING, writer_name, &ci, cl, "Incorrect Hash received\n");
@@ -277,8 +290,9 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 /* Construct a beat and send it outwards */
 void ayiya_beat(void)
 {
-	SHA_CTX			sha1;
-	sha1_byte		hash[SHA1_DIGEST_LENGTH];
+	// SHA_CTX			sha1;
+	EVP_MD_CTX		*md;
+	sha256_byte		hash[SHA256_DIGEST_LENGTH];
 	struct sockaddr_in	target;
 	struct pseudo_ayh	s;
 	int			lenout, n;
@@ -292,8 +306,8 @@ void ayiya_beat(void)
 	memset(&s, 0, sizeof(s));
 	s.ayh.ayh_idlen		= 4;			/* 2^4 = 16 bytes = 128 bits (IPv6 address) */
 	s.ayh.ayh_idtype	= ayiya_id_integer;
-	s.ayh.ayh_siglen	= 5;			/* 5*4 = 20 bytes = 160 bits (SHA1) */
-	s.ayh.ayh_hshmeth	= ayiya_hash_sha1;
+	s.ayh.ayh_siglen	= 8;			/* 8*4 = 32 bytes = 256 bits (SHA1) */
+	s.ayh.ayh_hshmeth	= ayiya_hash_sha256;
 	s.ayh.ayh_autmeth	= ayiya_auth_sharedsecret;
 	s.ayh.ayh_opcode	= ayiya_op_noop;
 	s.ayh.ayh_nextheader	= IPPROTO_NONE;
@@ -315,12 +329,17 @@ void ayiya_beat(void)
 	 */
         memcpy(&s.hash, ayiya_hash, sizeof(s.hash));
 
-	/* Generate a SHA1 */
-	SHA1_Init(&sha1);
-	/* Hash the complete AYIYA packet */
-	SHA1_Update(&sha1, (sha1_byte *)&s, sizeof(s)-sizeof(s.payload));
-	/* Store the hash in the packets hash */
-	SHA1_Final(hash, &sha1);
+	// /* Generate a SHA1 */
+	// SHA1_Init(&sha1);
+	// /* Hash the complete AYIYA packet */
+	// SHA1_Update(&sha1, (sha1_byte *)&s, sizeof(s)-sizeof(s.payload));
+	// /* Store the hash in the packets hash */
+	// SHA1_Final(hash, &sha1);
+
+	/* Generate sha256 hash */
+	SHA256Init(&md);
+	SHA256Update(&md, (sha256_byte *)&s, sizeof(s)-sizeof(s.payload));
+	SHA256Final(&md, hash);
 
 	/* Store the hash in the actual packet */
 	memcpy(&s.hash, &hash, sizeof(s.hash));
@@ -344,7 +363,8 @@ void ayiya_beat(void)
 
 bool ayiya(struct TIC_Tunnel *hTunnel)
 {
-    SHA_CTX			sha1;
+    // SHA_CTX			sha1;
+	EVP_MD_CTX		*md;
 	struct addrinfo hints, *res, *ressave;
 #ifndef _WIN32
 	pthread_t		thread;
@@ -441,9 +461,14 @@ bool ayiya(struct TIC_Tunnel *hTunnel)
 	}
 
 	/* Generate a SHA1 of the shared secret */
-	SHA1_Init(&sha1);
-	SHA1_Update(&sha1, (const sha1_byte *)hTunnel->sPassword, (unsigned int)strlen(hTunnel->sPassword));
-	SHA1_Final(ayiya_hash, &sha1);
+	// SHA1_Init(&sha1);
+	// SHA1_Update(&sha1, (const sha1_byte *)hTunnel->sPassword, (unsigned int)strlen(hTunnel->sPassword));
+	// SHA1_Final(ayiya_hash, &sha1);
+
+	/* Generate sha256 of the shared secret */
+	SHA256Init(&md);
+	SHA256Update(&md, (const sha256_byte *)hTunnel->sPassword, (unsigned int)strlen(hTunnel->sPassword));
+	SHA256Final(&md, ayiya_hash);
 
 	/* Setup listening socket */
 	ayiya_socket = connect_client(hTunnel->sIPv4_POP , AYIYA_PORT, AF_INET, SOCK_DGRAM);

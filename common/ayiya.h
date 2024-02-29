@@ -38,7 +38,8 @@ enum ayiya_hash
 	ayiya_hash_none			= 0x0,	/* No hash */
 	ayiya_hash_md5			= 0x1,	/* MD5 Signature */
 	ayiya_hash_sha1			= 0x2,	/* SHA1 Signature */
-	ayiya_hash_umac			= 0x3	/* UMAC Signature (UMAC: Message Authentication Code using Universal Hashing / draft-krovetz-umac-04.txt */
+	ayiya_hash_umac			= 0x3,	/* UMAC Signature (UMAC: Message Authentication Code using Universal Hashing / draft-krovetz-umac-04.txt */
+	ayiya_hash_sha256		= 0x4	/* SHA256 Signature */
 };
 
 enum ayiya_auth

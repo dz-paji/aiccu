@@ -39,6 +39,9 @@
 typedef uint32_t	sha1_quadbyte;	/* 4 byte type */
 typedef uint8_t		sha1_byte;	/* single byte type */
 
+typedef uint32_t	sha256_quadbyte;	/* 4 byte type */
+typedef uint8_t		sha256_byte;	/* single byte type */
+
 /*
  * Be sure to get the above definitions right.  For instance, on my
  * x86 based FreeBSD box, I define LITTLE_ENDIAN and use the type

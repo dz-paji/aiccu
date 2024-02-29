@@ -314,6 +314,9 @@
 #include "hash_md5.h"
 #include "hash_sha1.h"
 
+/* Include sha256 support */
+#include "hash_evp.h"
+
 /* GnuTLS*/
 #include <gnutls/gnutls.h>
 
