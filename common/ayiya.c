@@ -20,10 +20,12 @@ struct pseudo_ayh
 	struct ayiyahdr	ayh;
 	struct in6_addr	identity;
 	uint8_t	hash[SHA256_DIGEST_LENGTH];
-	char		payload[2048];
+	uint8_t		payload[2012];
 };
 
 struct in_addr		ayiya_ipv4_pop;			/* IPv4 remote endpoint */
+struct in_addr		pop_v4;
+struct in_addr		ayiya_reader_pop_v4;
 struct in6_addr		ayiya_ipv6_local,		/* IPv6 local  endpoint */
 			ayiya_ipv6_pop;			/* IPv6 remote endpoint */
 uint8_t		ayiya_hash[SHA256_DIGEST_LENGTH];	/* SHA256 Hash of the shared secret. */
@@ -86,12 +88,13 @@ void ayiya_reader(char *buf, unsigned int length)
 	// SHA_CTX			sha1;
 	// sha1_byte		hash[SHA1_DIGEST_LENGTH];
 	EVP_MD_CTX		*md = EVP_MD_CTX_create();
-	unsigned char			hash[SHA256_DIGEST_LENGTH];
+	uint8_t			hash[SHA256_DIGEST_LENGTH];
 	
 	struct sockaddr_in	target;
 
 	/* We tunnel over IPv4 */
-	memcpy(&target.sin_addr, &ayiya_ipv4_pop, sizeof(target.sin_addr));
+	memcpy(&target.sin_addr, &pop_v4, sizeof(target.sin_addr));
+	// memcpy(&target.sin_addr, &ayiya_reader, sizeof(ayiya_reader));
 	target.sin_family = AF_INET;
 	target.sin_port = htons(atoi(AYIYA_PORT));
 	
@@ -292,13 +295,14 @@ void ayiya_beat(void)
 {
 	// SHA_CTX			sha1;
 	EVP_MD_CTX		*md = EVP_MD_CTX_create();
-	unsigned char		hash[SHA256_DIGEST_LENGTH];
+	uint8_t		hash[SHA256_DIGEST_LENGTH];
 	struct sockaddr_in	target;
 	struct pseudo_ayh	s;
 	int			lenout, n;
 
 	/* We tunnel over IPv4 */
-	memcpy(&target.sin_addr, &ayiya_ipv4_pop, sizeof(target.sin_addr));
+	// memcpy(&target.sin_addr, &ayiya_ipv4_pop, sizeof(target.sin_addr));
+	memcpy(&target.sin_addr, &ayiya_ipv4_pop, sizeof(ayiya_ipv4_pop));
 	target.sin_family	= AF_INET;
 	target.sin_port		= htons(atoi(AYIYA_PORT));
 
@@ -340,7 +344,6 @@ void ayiya_beat(void)
 	SHA256Init(md);
 	SHA256Update(md, (unsigned char *)&s, sizeof(s)-sizeof(s.payload));
 	SHA256Final(md, hash);
-
 	/* Store the hash in the actual packet */
 	memcpy(&s.hash, &hash, sizeof(s.hash));
 
@@ -388,7 +391,7 @@ bool ayiya(struct TIC_Tunnel *hTunnel)
 		return false;
 	}
 	ressave = res;
-        while (res)
+    	while (res)
         {
 		if (res->ai_family != AF_INET)
 		{
@@ -396,6 +399,8 @@ bool ayiya(struct TIC_Tunnel *hTunnel)
 			continue;
 		}
 		memcpy(&ayiya_ipv4_pop, &((struct sockaddr_in *)res->ai_addr)->sin_addr, 4);
+		memcpy(&pop_v4, &((struct sockaddr_in *)res->ai_addr)->sin_addr, 4);
+		memcpy(&ayiya_reader_pop_v4, &((struct sockaddr_in *)res->ai_addr)->sin_addr, 4);
 		break;
         }
         freeaddrinfo(ressave);
@@ -467,13 +472,9 @@ bool ayiya(struct TIC_Tunnel *hTunnel)
 	// SHA1_Final(ayiya_hash, &sha1);
 
 	/* Generate sha256 of the shared secret */
-	D(dolog(LOG_DEBUG, "Generating SHA256 of the shared secret\n");)
 	SHA256Init(md);
-	D(dolog(LOG_DEBUG, "ayiya.c line 471\n");)
 	SHA256Update(md, (const sha256_byte *)hTunnel->sPassword, (unsigned int)strlen(hTunnel->sPassword));
-	D(dolog(LOG_DEBUG, "ayiya.c line 473\n");)
 	SHA256Final(md, ayiya_hash);
-	D(dolog(LOG_DEBUG, "SHA256 of the shared secret generated\n");)
 
 	/* Setup listening socket */
 	ayiya_socket = connect_client(hTunnel->sIPv4_POP , AYIYA_PORT, AF_INET, SOCK_DGRAM);
@@ -491,6 +492,9 @@ bool ayiya(struct TIC_Tunnel *hTunnel)
 
 	/* Show that we have started */
 	ayiya_log(LOG_INFO, "start", NULL, 0, "Anything in Anything (%s)\n", AYIYA_VERSION);
+	ayiya_log(LOG_INFO, "start", NULL, 0, "AYIYA IPv4 POP is %s\n", inet_ntoa(ayiya_ipv4_pop));
+	ayiya_log(LOG_INFO, "start", NULL, 0, "pop v4 is %s\n", inet_ntoa(pop_v4));
+	ayiya_log(LOG_INFO, "start", NULL, 0, "ayiya reader pop v4 is %s\n", inet_ntoa(ayiya_reader_pop_v4));
 
 	/* Launch a thread for reader */
 #ifndef _WIN32
