@@ -331,7 +331,7 @@ void ayiya_beat(void)
 	 * The hash of the shared secret needs to be in the
 	 * spot where we later put the complete hash
 	 */
-        memcpy(&s.hash, ayiya_hash, sizeof(s.hash));
+    memcpy(&s.hash, ayiya_hash, sizeof(s.hash));
 
 	// /* Generate a SHA1 */
 	// SHA1_Init(&sha1);
