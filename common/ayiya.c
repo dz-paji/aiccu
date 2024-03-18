@@ -220,6 +220,8 @@ DWORD WINAPI ayiya_writer(LPVOID arg)
 
 		if (memcmp(&s->identity, &ayiya_ipv6_pop, sizeof(s->identity)) != 0)
 		{
+			ayiya_log(LOG_DEBUG, writer_name, &ci, cl, "Packet identity: %s\n", inet_ntop(AF_INET6, &s->identity, (char *)&buf, sizeof(buf)));
+			ayiya_log(LOG_DEBUG, writer_name, &ci, cl, "Our identity: %s\n", inet_ntop(AF_INET6, &ayiya_ipv6_pop, (char *)&buf, sizeof(buf)));
 			memset(buf, 0, sizeof(buf));
 			inet_ntop(AF_INET6, &s->identity, (char *)&buf, sizeof(buf));
 			ayiya_log(LOG_WARNING, writer_name, &ci, cl, "Received packet from a wrong identity \"%s\"\n", buf);

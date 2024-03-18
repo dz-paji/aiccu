@@ -281,6 +281,7 @@ DWORD WINAPI tun_reader(LPVOID arg)
 /* Socket -> Tun */
 void tun_write(char *buf, unsigned int length)
 {
+	tun_log(LOG_DEBUG, writer_name, "Writing %u bytes to TUN\n", length);
 	unsigned int	c = 0;
 #ifndef _WIN32
 #ifdef linux

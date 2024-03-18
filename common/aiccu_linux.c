@@ -76,6 +76,7 @@ bool aiccu_os_setup(struct TIC_Tunnel *hTunnel)
 			g_aiccu->ipv6_interface);
 	}
 
+	/* Add route via tunnelled IPv6 */
 	aiccu_exec(
 		"ip -6 addr add %s/%u dev %s",
 		hTunnel->sIPv6_Local,
